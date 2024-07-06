@@ -13,18 +13,30 @@ const lightsMapper = {
   G: {
     maxConcurrentTimes: 5,
     nextLight: 'O',
-    nextLightConcurrentTimesStart: 0,
+    nextLightConcurrentTimesStart: 1,
   },
   O: {
     maxConcurrentTimes: 1,
     nextLight: 'R',
-    nextLightConcurrentTimesStart: 0,
+    nextLightConcurrentTimesStart: 1,
   },
   R: {
     maxConcurrentTimes: 5,
     nextLight: 'G',
     nextLightConcurrentTimesStart: 1,
   },
+};
+
+const updateLight = (
+  currentLight: string,
+  concurrentTimes: number,
+  lightMapper: Record<string, any>
+): [string, number] => {
+  const lightInfo = lightMapper[currentLight as keyof typeof lightMapper];
+  if (concurrentTimes > lightInfo.maxConcurrentTimes) {
+    return [lightInfo.nextLight, lightInfo.nextLightConcurrentTimesStart + 1];
+  }
+  return [currentLight, concurrentTimes + 1];
 };
 
 const trafficLightsOneCar = ({ road, n }: params) => {
@@ -47,33 +59,19 @@ const trafficLightsOneCar = ({ road, n }: params) => {
   const roadSimulations: string[] = [];
   const roadBluePrint = Array.from({ length: road.length }, () => '.');
 
+  let printCar = true;
+
   for (let i = 0; i <= n; i++) {
-    // console.log('currentFirstLight', currentFirstLight);
-    // console.log('firstLightConcurrentTimes', firstLightConcurrentTimes);
-
-    // Changing first light
-    const assertedFirstLight = currentFirstLight as keyof typeof lightsMapper;
-    if (
-      firstLightConcurrentTimes >
-      lightsMapper[assertedFirstLight].maxConcurrentTimes
-    ) {
-      currentFirstLight = lightsMapper[assertedFirstLight].nextLight;
-      firstLightConcurrentTimes =
-        lightsMapper[assertedFirstLight].nextLightConcurrentTimesStart;
-    }
-    firstLightConcurrentTimes++;
-
-    // Changing second light
-    const assertedSecondLight = currentSecondLight as keyof typeof lightsMapper;
-    if (
-      secondLightConcurrentTimes >
-      lightsMapper[assertedSecondLight].maxConcurrentTimes
-    ) {
-      currentFirstLight = lightsMapper[assertedSecondLight].nextLight;
-      secondLightConcurrentTimes =
-        lightsMapper[assertedSecondLight].nextLightConcurrentTimesStart;
-    }
-    secondLightConcurrentTimes++;
+    [currentFirstLight, firstLightConcurrentTimes] = updateLight(
+      currentFirstLight,
+      firstLightConcurrentTimes,
+      lightsMapper
+    );
+    [currentSecondLight, secondLightConcurrentTimes] = updateLight(
+      currentSecondLight,
+      secondLightConcurrentTimes,
+      lightsMapper
+    );
 
     if (i === 0) {
       roadSimulations.push(road);
@@ -89,12 +87,21 @@ const trafficLightsOneCar = ({ road, n }: params) => {
     const prevCarIndex = roadSimulations[roadSimulations.length - 1]
       .split('')
       .findIndex((elem) => elem === 'C');
+
     const nextCarIndex = (prevCarIndex + 1) % road.length;
 
-    if (newRoad[nextCarIndex] === 'R') {
-      newRoad[prevCarIndex] = 'C';
-    } else {
-      newRoad[nextCarIndex] = 'C';
+    if (prevCarIndex + 1 === road.length) {
+      printCar = false;
+      // roadSimulations.push(newRoad.join(''));
+      // continue;
+    }
+
+    if (printCar) {
+      if (newRoad[nextCarIndex] === 'R' || newRoad[nextCarIndex] === 'O') {
+        newRoad[prevCarIndex] = 'C';
+      } else {
+        newRoad[nextCarIndex] = 'C';
+      }
     }
 
     roadSimulations.push(newRoad.join(''));
@@ -107,4 +114,9 @@ const traffic = trafficLightsOneCar({
   road: 'C...R............G......',
   n: 10,
 });
+const traffic2 = trafficLightsOneCar({
+  road: 'C....G........R...',
+  n: 25,
+});
 console.log('traffic', traffic);
+console.log('traffic2', traffic2);
