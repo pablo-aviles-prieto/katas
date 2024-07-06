@@ -9,6 +9,24 @@ interface params {
   n: number;
 }
 
+const lightsMapper = {
+  G: {
+    maxConcurrentTimes: 5,
+    nextLight: 'O',
+    nextLightConcurrentTimesStart: 0,
+  },
+  O: {
+    maxConcurrentTimes: 1,
+    nextLight: 'R',
+    nextLightConcurrentTimesStart: 0,
+  },
+  R: {
+    maxConcurrentTimes: 5,
+    nextLight: 'G',
+    nextLightConcurrentTimesStart: 1,
+  },
+};
+
 const trafficLightsOneCar = ({ road, n }: params) => {
   const roadArray = road.split('');
 
@@ -30,53 +48,32 @@ const trafficLightsOneCar = ({ road, n }: params) => {
   const roadBluePrint = Array.from({ length: road.length }, () => '.');
 
   for (let i = 0; i <= n; i++) {
+    // console.log('currentFirstLight', currentFirstLight);
+    // console.log('firstLightConcurrentTimes', firstLightConcurrentTimes);
+
     // Changing first light
-    if (currentFirstLight === 'G') {
-      if (firstLightConcurrentTimes > 5) {
-        currentFirstLight = 'O';
-        firstLightConcurrentTimes = 0;
-      }
-      firstLightConcurrentTimes++;
+    const assertedFirstLight = currentFirstLight as keyof typeof lightsMapper;
+    if (
+      firstLightConcurrentTimes >
+      lightsMapper[assertedFirstLight].maxConcurrentTimes
+    ) {
+      currentFirstLight = lightsMapper[assertedFirstLight].nextLight;
+      firstLightConcurrentTimes =
+        lightsMapper[assertedFirstLight].nextLightConcurrentTimesStart;
     }
-    if (currentFirstLight === 'O') {
-      if (firstLightConcurrentTimes > 1) {
-        currentFirstLight = 'R';
-        firstLightConcurrentTimes = 1;
-      } else {
-        firstLightConcurrentTimes++;
-      }
-    }
-    if (currentFirstLight === 'R') {
-      if (firstLightConcurrentTimes > 5) {
-        currentFirstLight = 'G';
-        firstLightConcurrentTimes = 1;
-      }
-      firstLightConcurrentTimes++;
-    }
+    firstLightConcurrentTimes++;
 
     // Changing second light
-    if (currentSecondLight === 'G') {
-      if (secondLightConcurrentTimes > 5) {
-        currentSecondLight = 'O';
-        secondLightConcurrentTimes = 0;
-      }
-      secondLightConcurrentTimes++;
+    const assertedSecondLight = currentSecondLight as keyof typeof lightsMapper;
+    if (
+      secondLightConcurrentTimes >
+      lightsMapper[assertedSecondLight].maxConcurrentTimes
+    ) {
+      currentFirstLight = lightsMapper[assertedSecondLight].nextLight;
+      secondLightConcurrentTimes =
+        lightsMapper[assertedSecondLight].nextLightConcurrentTimesStart;
     }
-    if (currentSecondLight === 'O') {
-      if (secondLightConcurrentTimes > 1) {
-        currentSecondLight = 'R';
-        secondLightConcurrentTimes = 1;
-      } else {
-        secondLightConcurrentTimes++;
-      }
-    }
-    if (currentSecondLight === 'R') {
-      if (secondLightConcurrentTimes > 5) {
-        currentSecondLight = 'G';
-        secondLightConcurrentTimes = 1;
-      }
-      secondLightConcurrentTimes++;
-    }
+    secondLightConcurrentTimes++;
 
     if (i === 0) {
       roadSimulations.push(road);
