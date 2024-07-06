@@ -1,10 +1,4 @@
-/*
- ** https://www.codewars.com/kata/5d0ae91acac0a50232e8a547
- **
- ** 6 KYU
- */
-
-interface params {
+interface Params {
   road: string;
   n: number;
 }
@@ -39,39 +33,42 @@ const updateLight = (
   return [currentLight, concurrentTimes + 1];
 };
 
-const trafficLightsOneCar = ({ road, n }: params) => {
+const trafficLightsOneCar = ({ road, n }: Params) => {
   const roadArray = road.split('');
 
-  const firstRedLightIndex = Number(
-    roadArray.findIndex((roadElement) => roadElement === 'R') ?? '0'
-  );
-  const firstGreenLightIndex = Number(
-    roadArray.findIndex((roadElement) => roadElement === 'G') ?? '0'
-  );
-  const firstLightIndex = Math.min(firstRedLightIndex, firstGreenLightIndex);
-  const secondLightIndex = Math.max(firstRedLightIndex, firstGreenLightIndex);
-
-  let currentFirstLight = roadArray[firstLightIndex];
-  let currentSecondLight = roadArray[secondLightIndex];
-  let firstLightConcurrentTimes = 1;
-  let secondLightConcurrentTimes = 1;
+  // Find all traffic lights and their positions
+  const trafficLights: {
+    position: number;
+    state: string;
+    concurrentTimes: number;
+  }[] = [];
+  roadArray.forEach((element, index) => {
+    if (element === 'G' || element === 'R') {
+      trafficLights.push({
+        position: index,
+        state: element,
+        concurrentTimes: 1,
+      });
+    }
+  });
 
   const roadSimulations: string[] = [];
   const roadBluePrint = Array.from({ length: road.length }, () => '.');
 
+  // In case that the car finished the road, just not printing it anymore
   let printCar = true;
 
   for (let i = 0; i <= n; i++) {
-    [currentFirstLight, firstLightConcurrentTimes] = updateLight(
-      currentFirstLight,
-      firstLightConcurrentTimes,
-      lightsMapper
-    );
-    [currentSecondLight, secondLightConcurrentTimes] = updateLight(
-      currentSecondLight,
-      secondLightConcurrentTimes,
-      lightsMapper
-    );
+    // Update each light
+    trafficLights.forEach((light, idx) => {
+      const [newState, newConcurrentTimes] = updateLight(
+        light.state,
+        light.concurrentTimes,
+        lightsMapper
+      );
+      trafficLights[idx].state = newState;
+      trafficLights[idx].concurrentTimes = newConcurrentTimes;
+    });
 
     if (i === 0) {
       roadSimulations.push(road);
@@ -81,8 +78,9 @@ const trafficLightsOneCar = ({ road, n }: params) => {
     const newRoad = [...roadBluePrint];
 
     // Adding the new lights on the road
-    newRoad[firstLightIndex] = currentFirstLight;
-    newRoad[secondLightIndex] = currentSecondLight;
+    trafficLights.forEach((light) => {
+      newRoad[light.position] = light.state;
+    });
 
     const prevCarIndex = roadSimulations[roadSimulations.length - 1]
       .split('')
@@ -92,8 +90,6 @@ const trafficLightsOneCar = ({ road, n }: params) => {
 
     if (prevCarIndex + 1 === road.length) {
       printCar = false;
-      // roadSimulations.push(newRoad.join(''));
-      // continue;
     }
 
     if (printCar) {
@@ -114,9 +110,10 @@ const traffic = trafficLightsOneCar({
   road: 'C...R............G......',
   n: 10,
 });
-const traffic2 = trafficLightsOneCar({
-  road: 'C....G........R...',
-  n: 25,
-});
 console.log('traffic', traffic);
+
+const traffic2 = trafficLightsOneCar({
+  road: 'CG..G..R...G...G...',
+  n: 19,
+});
 console.log('traffic2', traffic2);
